@@ -1,5 +1,5 @@
 from crewai import Task
-from globalState import job_results, currentJob # Assuming this is a globally accessible dictionary
+from globalState import job_results, currentJob, publish_job_event
 from pydantic import BaseModel
 
 # Import Agents
@@ -48,6 +48,17 @@ def add_event(job_id, task_output):
         else:
             job_results[job_id] = {"status": "processing", "result": [task_output]}
             print("initialized job_results with new job_id")
+
+        log_message = str(task_output)
+        if isinstance(task_output, dict):
+            log_message = str(task_output.get("summary") or task_output.get("message") or task_output)
+
+        publish_job_event(
+            job_id,
+            "task_update",
+            log_message,
+            task_output=task_output,
+        )
 
     except Exception as e:
         print(f"Error in add_event: {e}")

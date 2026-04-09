@@ -1,0 +1,234 @@
+{
+  "job_id": "ab0fc6a3-5212-44b6-9a99-17d89ed3ad5f",
+  "report_timestamp": "20260409_161652",
+  "started_at": "2026-04-09T16:02:25.874026+00:00",
+  "completed_at": "2026-04-09T16:16:52.515523+00:00",
+  "duration_seconds": 866.641,
+  "provider": "ollama_generate_multi_agent",
+  "model": "deepseek-v3.1:671b-cloud",
+  "base_url": "https://ollama.com/api",
+  "usage_totals": {
+    "prompt_eval_count": 30332,
+    "eval_count": 28923
+  },
+  "agent_runs": [
+    {
+      "agent": "Manager Agent",
+      "focus": "Coordinate all agent findings into a coherent strategy.",
+      "duration_seconds": 60.484,
+      "response_chars": 7160,
+      "usage": {
+        "prompt_eval_count": 272,
+        "eval_count": 1926,
+        "total_duration": 59060113989,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Data Collection Agent",
+      "focus": "Extract and structure all relevant financial facts from the input.",
+      "duration_seconds": 83.932,
+      "response_chars": 7019,
+      "usage": {
+        "prompt_eval_count": 275,
+        "eval_count": 1832,
+        "total_duration": 82652951086,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Data Analyst Agent",
+      "focus": "Analyze financial patterns, surplus, and optimization opportunities.",
+      "duration_seconds": 72.799,
+      "response_chars": 6903,
+      "usage": {
+        "prompt_eval_count": 274,
+        "eval_count": 1837,
+        "total_duration": 71483133195,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Debt Management Agent",
+      "focus": "Recommend debt strategy, repayment order, and risk from liabilities.",
+      "duration_seconds": 34.075,
+      "response_chars": 7573,
+      "usage": {
+        "prompt_eval_count": 276,
+        "eval_count": 1983,
+        "total_duration": 33115105932,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Budget Optimization Agent",
+      "focus": "Provide budget category optimization and cost-control actions.",
+      "duration_seconds": 42.951,
+      "response_chars": 6611,
+      "usage": {
+        "prompt_eval_count": 273,
+        "eval_count": 1762,
+        "total_duration": 41704421089,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Goal-Based Planning Agent",
+      "focus": "Create timeline-driven plans for each financial goal.",
+      "duration_seconds": 42.423,
+      "response_chars": 7342,
+      "usage": {
+        "prompt_eval_count": 274,
+        "eval_count": 1938,
+        "total_duration": 41183663304,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Risk Advisor Agent",
+      "focus": "Assess risk exposure and provide mitigation safeguards.",
+      "duration_seconds": 46.367,
+      "response_chars": 6577,
+      "usage": {
+        "prompt_eval_count": 272,
+        "eval_count": 1639,
+        "total_duration": 45212191103,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Trading Strategy Developer Agent",
+      "focus": "Suggest practical strategy across selected asset classes.",
+      "duration_seconds": 56.357,
+      "response_chars": 7150,
+      "usage": {
+        "prompt_eval_count": 273,
+        "eval_count": 1797,
+        "total_duration": 54902683362,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Execution Agent",
+      "focus": "Provide execution sequence and allocation implementation steps.",
+      "duration_seconds": 42.606,
+      "response_chars": 6616,
+      "usage": {
+        "prompt_eval_count": 271,
+        "eval_count": 1736,
+        "total_duration": 41250570555,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Crypto Investment Agent",
+      "focus": "Give crypto-specific allocation and volatility controls.",
+      "duration_seconds": 78.586,
+      "response_chars": 8496,
+      "usage": {
+        "prompt_eval_count": 272,
+        "eval_count": 2259,
+        "total_duration": 77258427033,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Real Estate Investment Agent",
+      "focus": "Evaluate real-estate suitability and capital planning.",
+      "duration_seconds": 49.215,
+      "response_chars": 7380,
+      "usage": {
+        "prompt_eval_count": 274,
+        "eval_count": 1859,
+        "total_duration": 47339381855,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Gold Investment Agent",
+      "focus": "Assess role of gold/precious metals in portfolio protection.",
+      "duration_seconds": 60.926,
+      "response_chars": 8280,
+      "usage": {
+        "prompt_eval_count": 275,
+        "eval_count": 2052,
+        "total_duration": 59106685961,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Mutual Funds Agent",
+      "focus": "Recommend fund/ETF style selection and allocation logic.",
+      "duration_seconds": 54.68,
+      "response_chars": 7129,
+      "usage": {
+        "prompt_eval_count": 274,
+        "eval_count": 1743,
+        "total_duration": 52614563052,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    },
+    {
+      "agent": "Fixed Income Agent",
+      "focus": "Recommend fixed-income allocation for stability and liquidity.",
+      "duration_seconds": 48.053,
+      "response_chars": 7119,
+      "usage": {
+        "prompt_eval_count": 273,
+        "eval_count": 1734,
+        "total_duration": 46716071972,
+        "load_duration": null,
+        "prompt_eval_duration": null,
+        "eval_duration": null
+      }
+    }
+  ],
+  "final_synthesis_usage": {
+    "prompt_eval_count": 26504,
+    "eval_count": 2826,
+    "total_duration": 91223875011,
+    "load_duration": null,
+    "prompt_eval_duration": null,
+    "eval_duration": null
+  },
+  "input_stats": {
+    "user_data_chars": 443,
+    "user_query_chars": 44
+  },
+  "raw_response": {
+    "model": "deepseek-v3.1:671b-cloud",
+    "created_at": "2026-04-09T16:16:52.535879063Z",
+    "response": "Of course. Here is the consolidated, detailed financial plan based on the comprehensive multi-agent analysis of your financial status.\n\n***\n\n### **1. Executive Summary**\n\n*   **Exceptional Cash Flow:** Your monthly surplus of **₹34,000** (68% of income) provides a powerful foundation for rapid goal achievement and wealth building.\n*   **Achievable Goals:** Your goals (iPhone: ₹90k in 1Y, Bike: ₹200k in 2Y) are highly feasible, requiring a combined **₹15,833/month**, which is well within your surplus.\n*   **Risk Alignment:** Your stated **\"Medium\" risk tolerance** is best served by a **Balanced Strategy**, prioritizing capital safety for short-term goals while allowing growth potential for long-term wealth.\n*   **Critical First Step:** Building an **Emergency Fund** of **₹50,000 - ₹80,000** (3-5 months' expenses) is the non-negotiable priority to mitigate income risk.\n*   **Investment Vehicles:** Recommendations center on **Mutual Funds** (Liquid, Debt, Hybrid, Equity) for efficiency and discipline, with **Gold (via SGBs/ETFs)** for diversification and a **small, capped allocation to Crypto** for speculative growth.\n*   **Automation is Key:** Success hinges on setting up **Systematic Investment Plans (SIPs)** immediately to enforce discipline and leverage rupee-cost averaging.\n*   **Buffer for Inflation:** The plans allocate slightly more than the bare minimum for goals (e.g., ₹8,500 for the bike instead of ₹8,333) to create a buffer against cost inflation and market volatility.\n\n***\n\n### **2. Financial Baseline**\n\n| Metric | Amount (₹) | Details |\n| :--- | :--- | :--- |\n| **Gross Monthly Income** | 50,000 | Salary |\n| **Total Monthly Expenses** | 16,000 | Rent (8,000), Groceries (2,000), Utilities (2,500), Entertainment (2,000), Misc (1,500) |\n| **Net Monthly Surplus** | **34,000** | **Primary investible capital** |\n| **Short-Term Liabilities** | 0 | No debt. Excellent financial health. |\n| **Goal 1 (iPhone)** | 90,000 | Timeline: 12 months |\n| **Goal 2 (Bike)** | 200,000 | Timeline: 24 months |\n| **Total Goal Cost** | 290,000 | - |\n| **Risk Tolerance** | Medium | - |\n| **Investment Preferences** | - | Stocks, Gold, Mutual Funds, Crypto |\n\n***\n\n### **3. Agent-wise Findings Summary**\n\n*   **Manager Agent:** Recommends a Balanced plan. **iPhone:** Split between Liquid + Large-Cap Fund. **Bike:** Balanced Advantage Fund SIP. **Wealth:** ELSS, US Fund, SGBs. Stresses emergency fund first.\n*   **Data Analyst Agent:** Recommends a Balanced plan. **iPhone:** 80% Debt / 20% Arbitrage Fund. **Bike:** 60% Hybrid / 40% Debt+Gold. **Wealth:** Flexi-Cap, US Fund, Crypto.\n*   **Debt Management Agent:** Focuses on the pragmatic need for an emergency fund (₹80,000). Recommends a Balanced plan with a slightly more aggressive wealth-building allocation (₹19,300) including Crypto.\n*   **Budget Optimization Agent:** Clearly buckets the surplus. Recommends **iPhone:** RD/Debt Fund (₹7,500), **Bike:** BAF (₹9,000), **Wealth:** Equity (₹8,750), Gold (₹5,250), Crypto (₹3,500).\n*   **Goal-Based Planning Agent:** Emphasizes timeline-driven buckets. Recommends a 80/20 Debt/Gold split for the iPhone goal and a 50/30/20 Hybrid/Equity/Gold split for the Bike goal.\n*   **Risk Advisor Agent:** Advises a phased approach: build emergency fund first (Months 1-3), then initiate goal SIPs. Cautions strongly against using crypto for goal funding.\n*   **Crypto Investment Agent:** Provides the most detailed crypto integration, recommending a **DCA (Dollar-Cost Averaging)** approach of **₹2,000/month** strictly within the long-term wealth bucket (e.g., 50% BTC, 30% ETH, 20% altcoins/index).\n*   **Mutual Funds Agent:** Provides clear, fund-category-specific advice: **iPhone:** Liquid Fund, **Bike:** Balanced Advantage Fund, **Wealth:** Flexi-Cap, International, Gold, Crypto.\n*   **Fixed Income Agent:** Focuses on capital preservation for goals, recommending **Ultra-Short Duration** and **Banking & PSU Debt Funds** for the goal buckets, pushing risk-taking to the surplus.\n\n***\n\n### **4. Multi-Strategy Plans**\n\nYour monthly surplus to allocate: **₹34,000**. All strategies assume an emergency fund is built first.\n\n#### **Strategy A: Conservative (Capital Preservation)**\n*   **Philosophy:** Absolute safety of principal for all goals. Minimize volatility.\n*   **Monthly Allocation:**\n    *   **iPhone Goal (₹7,500):** 100% Recurring Deposit (RD) / Liquid Fund.\n    *   **Bike Goal (₹8,500):** 100% Debt Fund / RD.\n    *   **Long-Term (₹18,000):** 50% Debt Fund, 30% Gold ETF/SGB, 20% Large-Cap Index Fund.\n*   **Expected Return Range:** 5% - 7% p.a.\n*   **Pros:** Near-zero risk of capital loss for goals. Predictable outcomes.\n*   **Cons:** Lowest potential returns. High inflation risk may erode purchasing power over time.\n\n#### **Strategy B: Balanced (Recommended)**\n*   **Philosophy:** Capital protection for short-term goals, balanced growth for medium-term goals, and aggressive growth for long-term wealth.\n*   **Monthly Allocation:**\n    *   **iPhone Goal (₹7,500):** 100% Arbitrage Fund / Ultra-Short Duration Fund.\n    *   **Bike Goal (₹8,500):** 100% Balanced Advantage Fund (BAF) SIP.\n    *   **Long-Term Wealth (₹18,000):**\n        *   **₹10,000:** Flexi-Cap / Multi-Cap Fund SIP\n        *   **₹5,000:** US Total Market Index Fund (e.g., NASDAQ 100)\n        *   **₹2,000:** Sovereign Gold Bonds (SGB) / Gold ETF\n        *   **₹1,000:** Crypto (DCA into major coins)\n*   **Expected Return Range:** 8% - 12% p.a. (overall portfolio)\n*   **Pros:** Optimal balance of risk and reward. High probability of meeting goals with a buffer. Strong long-term growth potential. Aligns perfectly with your profile.\n*   **Cons:** Accepts minor short-term volatility in the Bike and Long-Term portfolios.\n\n#### **Strategy C: Growth (Aggressive)**\n*   **Philosophy:** Maximize growth potential; accept higher volatility across the portfolio.\n*   **Monthly Allocation:**\n    *   **iPhone Goal (₹7,500):** 50% Arbitrage Fund, 50% Balanced Advantage Fund.\n    *   **Bike Goal (₹8,500):** 100% Equity Multi-Cap Fund SIP.\n    *   **Long-Term Wealth (₹18,000):**\n        *   **₹12,000:** Sectoral/Thematic Fund + Small-Cap Fund SIP\n        *   **₹4,000:** Crypto (DCA)\n        *   **₹2,000:** Gold ETF\n*   **Expected Return Range:** 12% - 18%+ p.a. (with high volatility)\n*   **Pros:** Potential to significantly exceed goal targets and accelerate long-term wealth creation.\n*   **Cons:** High risk of capital erosion. You may not have the full amount for your goals if markets decline near your target date. Not recommended for your stated medium risk tolerance.\n\n***\n\n### **5. Goal-Wise Roadmap & Feasibility (Using Balanced Strategy)**\n\n| Goal | Total Cost (₹) | Timeline (Mo.) | Monthly Req. (₹) | Recommended Monthly (₹) | Investment Vehicle | Projected Value (at ~10%) | Feasibility |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| **Emergency Fund** | 50,000 | 2 | 25,000 | 25,000 (for 2 mo.) | Liquid Fund | 50,000 | **High.** Will be complete in 2 months. |\n| **iPhone** | 90,000 | 12 | 7,500 | 7,500 | Arbitrage Fund | ~93,800 | **Very High.** Capital protection ensures goal is met. |\n| **Bike** | 200,000 | 24 | 8,333 | 8,500 | Balanced Adv. Fund | ~225,000 | **High.** The extra ₹167/mo and growth potential create a comfortable buffer. |\n\n***\n\n### **6. Debt & Cashflow Plan**\n\n*   **Current Debt:** None. This is optimal. **Recommendation:** Avoid taking on any high-interest consumer debt (e.g., credit card debt) in the future.\n*   **Cashflow Management:** Your positive cashflow of ₹34,000 is your greatest asset.\n    *   **Action:** Automate all investments via SIPs on the 2nd day of the month.\n    *   **Buffer:** Maintain a revolving cash buffer of ₹2,000 - ₹5,000 in your savings account for minor, unexpected expenses without disrupting your SIPs.\n\n***\n\n### **7. Risk Controls & Contingency Triggers**\n\n*   **Market Risk:** The value of equity and hybrid investments will fluctuate.\n    *   **Control:** Diversification across asset classes (Debt, Equity, Gold, Geographies). Use SIPs to average cost.\n    *   **Contingency:** For the Bike goal, if the portfolio value is below target at Month 18, redirect the ₹7,500 from the completed iPhone goal to the Bike fund.\n*   **Income Risk:** Job loss or medical emergency.\n    *   **Control:** The Emergency Fund is the primary control for this risk.\n    *   **Contingency:** If depleted, pause all investment SIPs except the goal-specific ones until the emergency fund is rebuilt.\n*   **Inflation Risk:** Goal costs may increase.\n    *   **Control:** The growth-oriented components of the Bike fund and the allocated buffers aim to outpace inflation.\n    *   **Contingency:** Review goal costs annually and adjust monthly contributions if necessary.\n*   **Crypto Risk:** Extreme volatility and potential loss.\n    *   **Control:** Strict allocation cap (**≤5%** of total portfolio value). Never use goal money for crypto.\n    *   **Contingency:** If the crypto allocation grows to >10% of your portfolio, rebalance by taking profits and redistributing to other assets.\n\n***\n\n### **8. Action Plan**\n\n*   **Next 30 Days (Foundation Phase):**\n    1.  Open accounts with a discount broker/platform (e.g., Zerodha, Groww).\n    2.  Complete KYC for mutual funds.\n    3.  Research and select 1-2 specific funds for each recommended category.\n    4.  **Priority:** Build emergency fund. Transfer **₹25,000** to a Liquid Fund.\n    5.  Set up SIPs for iPhone (₹7,500 in Arbitrage Fund) and Bike (₹8,500 in BAF) to start next month.\n\n*   **Next 90 Days (Execution Phase):**\n    1.  Emergency fund target of ₹50,000 should be complete.\n    2.  All SIPs (Goals + Long-Term Wealth) should be running automatically.\n    3.  Execute first crypto DCA purchase (₹1,000).\n    4.  First portfolio review: Check if all SIPs are executing correctly.\n\n*   **Next 180 Days (Monitoring Phase):**\n    1.  Conduct a semi-annual performance review against projections.\n    2.  Rebalance if any asset class (especially Crypto) has deviated significantly from its target allocation.\n    3.  Re-assess life goals and income/expenses for any changes.\n\n***\n\n### **9. Monitoring KPIs (Key Performance Indicators)**\n\nTrack these metrics monthly/quarterly:\n\n| KPI | Target | Frequency |\n| :--- | :--- | :--- |\n| **Total Emergency Fund Value** | ≥ ₹50,000 | Monthly |\n| **iPhone Goal Fund Value** | Track against ₹7,500 * n months | Monthly |\n| **Bike Goal Fund Value** | Track against target trajectory | Quarterly |\n| **Total Portfolio Asset Allocation** | Equity: ~50%, Debt: ~30%, Gold: ~15%, Crypto: ~5% | Quarterly |\n| **SIP Execution Rate** | 100% | Monthly |\n| **Monthly Surplus (Post-SIP)** | ~₹0 (all surplus invested) | Monthly |\n| **Credit Score** | >750 | Annually |",
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 91223875011,
+    "prompt_eval_count": 26504,
+    "eval_count": 2826
+  }
+}

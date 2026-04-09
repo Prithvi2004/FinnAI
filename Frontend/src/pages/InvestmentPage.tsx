@@ -19,24 +19,13 @@ import { FinnAILogo } from "../components/FinnAILogo";
 import { FinancialAgents } from "../components/FinancialAgents";
 import { useFinancialContext } from "../contexts/FinancialContext";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface ApiResponse {
-  message: string;
-  job_id: string;
-}
-interface AgentMessage {
-  name: string;
-  description: string;
-  summary: string;
-  expected_output: string;
-  raw: string;
-  json_dict?: any;
-  agent: string;
-}
-interface JobStatusResponse {
-  status: string;
-  result: AgentMessage[];
-}
+import {
+  executeAnalysis,
+  getDownloadUrl,
+  getStreamUrl,
+  type AgentMessage,
+  type JobLogEvent,
+} from "../lib/backendApi";
 
 export function InvestmentPage() {
   const [userData, setUserData] = useState("");
@@ -49,11 +38,15 @@ export function InvestmentPage() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string>("idle");
   const [agentMessages, setAgentMessages] = useState<AgentMessage[]>([]);
+  const [terminalLogs, setTerminalLogs] = useState<JobLogEvent[]>([]);
+  const [workflowJson, setWorkflowJson] = useState<Record<string, unknown> | null>(null);
+  const [reportTimestamp, setReportTimestamp] = useState<string | null>(null);
   const [lastMessageCount, setLastMessageCount] = useState(0);
   const conversationRef = useRef<HTMLDivElement>(null);
 
   // UI toggles
   const [showTerminal, setShowTerminal] = useState(true);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const isComplete = jobStatus === "completed";
 
@@ -62,45 +55,89 @@ export function InvestmentPage() {
   }, [summaryStatement]);
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    if (jobId) {
-      fetchJobStatus();
-      intervalId = setInterval(fetchJobStatus, 2000);
+    if (!jobId) return;
+
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
-    return () => { if (intervalId) clearInterval(intervalId); };
-  }, [jobId]);
+
+    const eventSource = new EventSource(getStreamUrl(jobId));
+    eventSourceRef.current = eventSource;
+
+    const handleEvent = (event: MessageEvent<string>) => {
+      try {
+        const parsed = JSON.parse(event.data) as JobLogEvent;
+        setTerminalLogs((prev) => [...prev, parsed]);
+
+        if (parsed.type === "start") {
+          setJobStatus("processing");
+        }
+
+        if (parsed.type === "task_update" && parsed.task_output) {
+          const payload = parsed.task_output as AgentMessage;
+          setAgentMessages((prev) => [...prev, payload]);
+        }
+
+        if (parsed.type === "completed") {
+          setJobStatus("completed");
+          setLoading(false);
+          if (typeof parsed.report_timestamp === "string") {
+            setReportTimestamp(parsed.report_timestamp);
+          }
+          if (Array.isArray(parsed.result)) {
+            setAgentMessages(parsed.result);
+          }
+          if (parsed.workflow_json && typeof parsed.workflow_json === "object") {
+            setWorkflowJson(parsed.workflow_json);
+          }
+          if (typeof parsed.final_report === "string" && parsed.final_report.trim().length > 0) {
+            setResponse(parsed.final_report);
+          } else {
+            setResponse(parsed.message || "Processing complete");
+          }
+        }
+
+        if (parsed.type === "job_error") {
+          setJobStatus("failed");
+          setError(parsed.error || parsed.message || "Analysis failed on backend");
+          setLoading(false);
+        }
+      } catch {
+        // Ignore malformed SSE payloads.
+      }
+    };
+
+    eventSource.addEventListener("start", handleEvent as EventListener);
+    eventSource.addEventListener("log", handleEvent as EventListener);
+    eventSource.addEventListener("task_update", handleEvent as EventListener);
+    eventSource.addEventListener("completed", handleEvent as EventListener);
+    eventSource.addEventListener("job_error", handleEvent as EventListener);
+
+    eventSource.onerror = () => {
+      eventSource.close();
+      if (eventSourceRef.current === eventSource) {
+        eventSourceRef.current = null;
+      }
+      if (jobStatus === "processing") setError("Stream disconnected before completion.");
+    };
+
+    return () => {
+      eventSource.close();
+      if (eventSourceRef.current === eventSource) {
+        eventSourceRef.current = null;
+      }
+    };
+  }, [jobId, jobStatus]);
 
   useEffect(() => {
-    if (agentMessages && agentMessages.length > lastMessageCount && conversationRef.current) {
+    const shouldScroll =
+      terminalLogs.length > lastMessageCount || agentMessages.length > lastMessageCount;
+    if (shouldScroll && conversationRef.current) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
-      setLastMessageCount(agentMessages.length);
+      setLastMessageCount(Math.max(terminalLogs.length, agentMessages.length));
     }
-  }, [agentMessages, lastMessageCount]);
-
-  const fetchJobStatus = async () => {
-    if (!jobId) return;
-    try {
-      const res = await fetch(`http://localhost:8000/api/${jobId}`);
-      if (!res.ok) throw new Error("Failed to fetch job status");
-      const data: JobStatusResponse = await res.json();
-      setJobStatus(data.status);
-      setAgentMessages(data.result || []);
-      if (data.status === "completed" && data.result.length > 0) {
-        const lastMessage = data.result[data.result.length - 1];
-        if (lastMessage.json_dict?.message) {
-          setResponse(lastMessage.json_dict.message);
-        } else if (lastMessage.raw) {
-          try {
-            const rawJson = JSON.parse(lastMessage.raw);
-            setResponse(rawJson.message || "Processing complete");
-          } catch { setResponse(lastMessage.raw); }
-        }
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error("Error fetching job status:", err);
-    }
-  };
+  }, [agentMessages, terminalLogs, lastMessageCount]);
 
   const handleSubmit = async () => {
     if (!userData || !userQuery) { setError("Both user data and query are required"); return; }
@@ -110,17 +147,15 @@ export function InvestmentPage() {
     setJobId(null);
     setJobStatus("idle");
     setAgentMessages([]);
+    setTerminalLogs([]);
+    setWorkflowJson(null);
+    setReportTimestamp(null);
     setLastMessageCount(0);
     setShowTerminal(true); // auto-open terminal on submit
     try {
-      const res = await fetch("http://localhost:8000/api/execute/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_data: userData, user_query: userQuery }),
-      });
-      if (!res.ok) throw new Error("Failed to execute query");
-      const data: ApiResponse = await res.json();
+      const data = await executeAnalysis({ user_data: userData, user_query: userQuery });
       setJobId(data.job_id);
+      setJobStatus("processing");
       setResponse(data.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -129,7 +164,7 @@ export function InvestmentPage() {
   };
 
   const formatAgentMessage = (message: AgentMessage) => {
-    if (message.json_dict?.message) return message.json_dict.message;
+    if (typeof message.json_dict?.message === "string") return message.json_dict.message;
     if (message.raw) {
       try {
         const rawJson = JSON.parse(message.raw);
@@ -317,7 +352,41 @@ export function InvestmentPage() {
                           <span>{jobStatus === "processing" ? "$ executing multi-agent routing..." : "$ initializing..."}</span>
                           <div className="w-2 h-3.5 bg-green-500 animate-pulse" />
                         </div>
-                        {agentMessages && agentMessages.length > 0 ? (
+                        {terminalLogs.length > 0 ? (
+                          terminalLogs.map((log) => (
+                            <div key={log.id} className="animate-slideUp">
+                              <div className={`flex items-center gap-2 text-[11px] tracking-wide ${
+                                log.type === "job_error"
+                                  ? "text-red-400"
+                                  : log.type === "completed"
+                                  ? "text-emerald-300"
+                                  : log.type === "task_update"
+                                  ? "text-amber-300"
+                                  : "text-cyan-400"
+                              }`} style={{ textShadow: "0 0 8px rgba(34,211,238,0.4)" }}>
+                                <span>[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                                <span className={`font-bold ${
+                                  log.type === "job_error"
+                                    ? "text-red-300"
+                                    : log.type === "completed"
+                                    ? "text-emerald-300"
+                                    : "text-amber-300"
+                                }`}>{log.type.toUpperCase()}</span>
+                              </div>
+                              <div className={`pl-3 border-l-2 py-1 whitespace-pre-wrap mt-1 leading-relaxed ${
+                                log.type === "job_error"
+                                  ? "border-red-400/50 text-red-300"
+                                  : log.type === "completed"
+                                  ? "border-emerald-400/50 text-emerald-300"
+                                  : log.type === "task_update"
+                                  ? "border-amber-400/50 text-amber-100"
+                                  : "border-charcoal-700/60 text-green-400/90"
+                              }`}>
+                                &gt; {log.message}
+                              </div>
+                            </div>
+                          ))
+                        ) : agentMessages && agentMessages.length > 0 ? (
                           agentMessages.map((msg, i) => (
                             <div key={i} className="animate-slideUp" style={{ animationDelay: `${i * 0.08}s` }}>
                               <div className="flex items-center gap-2 text-cyan-400 text-[11px] tracking-wide" style={{ textShadow: "0 0 8px rgba(34,211,238,0.4)" }}>
@@ -435,6 +504,9 @@ export function InvestmentPage() {
                 <span className={`text-sm font-serif transition-colors duration-500 ${isComplete ? "text-warmGrey-100" : "text-charcoal-600"}`}>
                   Final Report
                 </span>
+                {reportTimestamp && (
+                  <span className="text-[10px] font-mono text-warmGrey-500">#{reportTimestamp}</span>
+                )}
               </div>
               <div className={`flex items-center gap-1.5 text-[10px] sm:text-xs font-mono px-3 py-1.5 rounded-full border transition-all duration-500 shadow-sm
                 ${isComplete
@@ -455,6 +527,34 @@ export function InvestmentPage() {
                   className="text-xs text-warmGrey-300 leading-relaxed whitespace-pre-wrap font-sans"
                 >
                   {response}
+                  {jobId && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <a
+                        href={getDownloadUrl(jobId, "report")}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-md border border-bronze/40 px-3 py-1.5 text-[11px] font-mono text-bronze hover:bg-bronze/10 transition-colors"
+                      >
+                        Download report
+                      </a>
+                      <a
+                        href={getDownloadUrl(jobId, "agent_analysis")}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-md border border-bronze/40 px-3 py-1.5 text-[11px] font-mono text-bronze hover:bg-bronze/10 transition-colors"
+                      >
+                        Download agent analysis
+                      </a>
+                      <a
+                        href={getDownloadUrl(jobId, "workflow_json")}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-md border border-bronze/40 px-3 py-1.5 text-[11px] font-mono text-bronze hover:bg-bronze/10 transition-colors"
+                      >
+                        Download workflow JSON
+                      </a>
+                    </div>
+                  )}
                 </motion.div>
               ) : loading ? (
                 <div className="flex items-center gap-2 text-xs text-warmGrey-600 font-mono">
@@ -465,6 +565,34 @@ export function InvestmentPage() {
                 <div className="flex items-center gap-3 h-full">
                   <ChevronRight className="w-4 h-4 text-charcoal-700" />
                   <span className="text-xs text-charcoal-600 font-mono">Final report will appear here after analysis.</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Workflow JSON */}
+          <div className={`flex-1 rounded-2xl border backdrop-blur-md overflow-hidden transition-all duration-500
+            ${isComplete ? "border-bronze/30 bg-charcoal-900/60" : "border-charcoal-800/40 bg-charcoal-900/20"}`}>
+            <div className={`flex items-center justify-between px-4 py-3 border-b transition-colors duration-500
+              ${isComplete ? "border-bronze/20" : "border-charcoal-800/30"}`}>
+              <div className="flex items-center gap-2.5">
+                <FileText className={`w-4 h-4 transition-colors duration-500 ${isComplete ? "text-bronze" : "text-charcoal-600"}`} />
+                <span className={`text-sm font-serif transition-colors duration-500 ${isComplete ? "text-warmGrey-100" : "text-charcoal-600"}`}>
+                  Workflow JSON (timing/tokens)
+                </span>
+              </div>
+            </div>
+            <div className="px-5 py-4 min-h-[160px] overflow-y-auto custom-scrollbar">
+              {isComplete && workflowJson ? (
+                <pre className="text-[11px] text-warmGrey-300 whitespace-pre-wrap break-words font-mono">
+                  {JSON.stringify(workflowJson, null, 2)}
+                </pre>
+              ) : (
+                <div className="flex items-center gap-3 h-full">
+                  <ChevronRight className="w-4 h-4 text-charcoal-700" />
+                  <span className="text-xs text-charcoal-600 font-mono">
+                    Workflow JSON with duration/token-like metrics will appear here.
+                  </span>
                 </div>
               )}
             </div>

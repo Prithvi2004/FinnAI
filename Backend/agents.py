@@ -4,14 +4,25 @@ import os
 from tools import scrape_tool, search_tool 
 
 # Load environment variables
-load_dotenv()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(dotenv_path=os.path.join(BASE_DIR, ".env"), override=True)
 
-# Initialize LLM
+OLLAMA_API_KEY = (os.getenv("OLLAMA_API_KEY") or "").strip()
+if not OLLAMA_API_KEY:
+    raise ValueError("Missing OLLAMA_API_KEY in environment/.env")
+
+# LiteLLM's ollama_chat provider appends /api/chat, so the base must not include /api.
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "https://ollama.com").rstrip("/")
+if OLLAMA_BASE_URL.endswith("/api"):
+    OLLAMA_BASE_URL = OLLAMA_BASE_URL[:-4]
+
+# Initialize LLM (Ollama Cloud)
 llm = LLM(
-    model="gemini/gemini-2.0-flash",
+    model="ollama_chat/deepseek-v3.1:671b-cloud",
+    base_url=OLLAMA_BASE_URL,
+    api_key=OLLAMA_API_KEY,
     verbose=True,
     temperature=0.5,
-    api_key="AIzaSyCgKIvQ8QGw85YWQ4WDqEwruO9C6aNydl0"
 )
 
 from tools import (

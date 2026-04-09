@@ -1,8 +1,9 @@
-import sys
-sys.path.append('/Users/abdulazeez/Desktop/fsBackend/.venv/lib')
+import os
 from dotenv import load_dotenv
-load_dotenv()
-from crewai import Crew, Process, LLM 
+from crewai import Crew, Process, LLM
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(dotenv_path=os.path.join(BASE_DIR, ".env"), override=True)
 from agents import (
     manager_agent,
     data_collection_agent,
@@ -34,18 +35,26 @@ from tasks import (
     mutual_funds_task,
     fixed_income_task
 )
-import os
 import json
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
+OLLAMA_API_KEY = (os.getenv("OLLAMA_API_KEY") or "").strip()
+if not OLLAMA_API_KEY:
+    raise ValueError("Missing OLLAMA_API_KEY in environment/.env")
+
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "https://ollama.com").rstrip("/")
+if OLLAMA_BASE_URL.endswith("/api"):
+    OLLAMA_BASE_URL = OLLAMA_BASE_URL[:-4]
+
 # Initialize Manager LLM
 llm_manager = LLM(
-    model="gemini/gemini-2.0-flash",
+    model="ollama_chat/deepseek-v3.1:671b-cloud",
+    base_url=OLLAMA_BASE_URL,
     temperature=0.5,
-    api_key="AIzaSyCgKIvQ8QGw85YWQ4WDqEwruO9C6aNydl0", 
+    api_key=OLLAMA_API_KEY,
     verbose=True
 )
 
@@ -87,14 +96,9 @@ crew = Crew(
     process=Process.hierarchical,
 )
 def CrewCall(user_inputs):
-    
     result = crew.kickoff(inputs=user_inputs)
-
     print(result)
-
-    with open("final_report.txt", "w", encoding="utf-8") as file:
-        file.write(str(result))
-    print("Final report saved to final_report.txt.")
+    return str(result)
     
 
 __all__ = [CrewCall]
