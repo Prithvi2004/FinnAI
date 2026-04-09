@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { FinnAILogo } from "../components/FinnAILogo";
 import { FinancialAgents } from "../components/FinancialAgents";
 import { useFinancialContext } from "../contexts/FinancialContext";
+import { useAuth } from "../contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   executeAnalysis,
@@ -35,20 +36,36 @@ export function InvestmentPage() {
   const [error, setError] = useState<string | null>(null);
 
   const { summaryStatement } = useFinancialContext();
+  const { user } = useAuth();
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string>("idle");
   const [agentMessages, setAgentMessages] = useState<AgentMessage[]>([]);
   const [terminalLogs, setTerminalLogs] = useState<JobLogEvent[]>([]);
   const [workflowJson, setWorkflowJson] = useState<Record<string, unknown> | null>(null);
+  const [emailStatus, setEmailStatus] = useState<string | null>(null);
+  const [emailRecipient, setEmailRecipient] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [reportTimestamp, setReportTimestamp] = useState<string | null>(null);
   const [lastMessageCount, setLastMessageCount] = useState(0);
   const conversationRef = useRef<HTMLDivElement>(null);
 
   // UI toggles
   const [showTerminal, setShowTerminal] = useState(true);
+  const [showAgentAnalysis, setShowAgentAnalysis] = useState(true);
+  const [showFinalReport, setShowFinalReport] = useState(true);
+  const [showWorkflowPanel, setShowWorkflowPanel] = useState(true);
+  const [streamRetryNonce, setStreamRetryNonce] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const lastEventIdRef = useRef(0);
+  const jobStatusRef = useRef(jobStatus);
 
   const isComplete = jobStatus === "completed";
+
+  useEffect(() => {
+    jobStatusRef.current = jobStatus;
+  }, [jobStatus]);
 
   useEffect(() => {
     if (summaryStatement) setUserData(summaryStatement);
@@ -56,19 +73,24 @@ export function InvestmentPage() {
 
   useEffect(() => {
     if (!jobId) return;
+    let terminalEventReceived = false;
 
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
 
-    const eventSource = new EventSource(getStreamUrl(jobId));
+    const eventSource = new EventSource(getStreamUrl(jobId, lastEventIdRef.current));
     eventSourceRef.current = eventSource;
 
     const handleEvent = (event: MessageEvent<string>) => {
       try {
         const parsed = JSON.parse(event.data) as JobLogEvent;
+        if (typeof parsed.id === "number" && parsed.id > lastEventIdRef.current) {
+          lastEventIdRef.current = parsed.id;
+        }
         setTerminalLogs((prev) => [...prev, parsed]);
+        reconnectAttemptsRef.current = 0;
 
         if (parsed.type === "start") {
           setJobStatus("processing");
@@ -80,6 +102,7 @@ export function InvestmentPage() {
         }
 
         if (parsed.type === "completed") {
+          terminalEventReceived = true;
           setJobStatus("completed");
           setLoading(false);
           if (typeof parsed.report_timestamp === "string") {
@@ -91,6 +114,17 @@ export function InvestmentPage() {
           if (parsed.workflow_json && typeof parsed.workflow_json === "object") {
             setWorkflowJson(parsed.workflow_json);
           }
+          if (typeof parsed.email_status === "string") {
+            setEmailStatus(parsed.email_status);
+          }
+          if (typeof parsed.email_recipient === "string") {
+            setEmailRecipient(parsed.email_recipient);
+          }
+          if (typeof parsed.email_error === "string") {
+            setEmailError(parsed.email_error);
+          } else {
+            setEmailError(null);
+          }
           if (typeof parsed.final_report === "string" && parsed.final_report.trim().length > 0) {
             setResponse(parsed.final_report);
           } else {
@@ -99,6 +133,7 @@ export function InvestmentPage() {
         }
 
         if (parsed.type === "job_error") {
+          terminalEventReceived = true;
           setJobStatus("failed");
           setError(parsed.error || parsed.message || "Analysis failed on backend");
           setLoading(false);
@@ -119,16 +154,34 @@ export function InvestmentPage() {
       if (eventSourceRef.current === eventSource) {
         eventSourceRef.current = null;
       }
-      if (jobStatus === "processing") setError("Stream disconnected before completion.");
+
+      // If a terminal event has been received, do not show disconnect/retry noise.
+      if (terminalEventReceived) {
+        return;
+      }
+
+      // Network/SSE hiccups are common during long runs; auto-reconnect while processing.
+      if (jobStatusRef.current === "processing") {
+        const attempts = reconnectAttemptsRef.current + 1;
+        reconnectAttemptsRef.current = attempts;
+        const retryDelayMs = Math.min(1000 * 2 ** (attempts - 1), 10000);
+        reconnectTimerRef.current = window.setTimeout(() => {
+          setStreamRetryNonce((prev) => prev + 1);
+        }, retryDelayMs);
+      }
     };
 
     return () => {
+      if (reconnectTimerRef.current !== null) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
       eventSource.close();
       if (eventSourceRef.current === eventSource) {
         eventSourceRef.current = null;
       }
     };
-  }, [jobId, jobStatus]);
+  }, [jobId, streamRetryNonce]);
 
   useEffect(() => {
     const shouldScroll =
@@ -146,14 +199,27 @@ export function InvestmentPage() {
     setResponse(null);
     setJobId(null);
     setJobStatus("idle");
+    setStreamRetryNonce(0);
+    reconnectAttemptsRef.current = 0;
+    lastEventIdRef.current = 0;
     setAgentMessages([]);
     setTerminalLogs([]);
     setWorkflowJson(null);
+    setEmailStatus(null);
+    setEmailRecipient(null);
+    setEmailError(null);
     setReportTimestamp(null);
     setLastMessageCount(0);
     setShowTerminal(true); // auto-open terminal on submit
+    setShowAgentAnalysis(true);
+    setShowFinalReport(true);
+    setShowWorkflowPanel(true);
     try {
-      const data = await executeAnalysis({ user_data: userData, user_query: userQuery });
+      const data = await executeAnalysis({
+        user_data: userData,
+        user_query: userQuery,
+        recipient_email: user?.email || undefined,
+      });
       setJobId(data.job_id);
       setJobStatus("processing");
       setResponse(data.message);
@@ -449,48 +515,69 @@ export function InvestmentPage() {
                   Agent Wise Analysis
                 </span>
               </div>
-              <div className={`flex items-center gap-1.5 text-[10px] sm:text-xs font-mono px-3 py-1.5 rounded-full border transition-all duration-500 shadow-sm
-                ${isComplete
-                  ? "text-green-400 bg-green-400/10 border-green-400/30 shadow-green-500/10"
-                  : loading
-                  ? "text-amber-400 bg-amber-400/10 border-amber-400/40 shadow-amber-500/20"
-                  : "text-warmGrey-400 bg-charcoal-700/50 border-charcoal-600/50"}`}>
-                {isComplete ? <CheckCircle2 className="w-3.5 h-3.5" /> : loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
-                {isComplete ? "Completed" : loading ? "Processing..." : "Waiting to Execute"}
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-1.5 text-[10px] sm:text-xs font-mono px-3 py-1.5 rounded-full border transition-all duration-500 shadow-sm
+                  ${isComplete
+                    ? "text-green-400 bg-green-400/10 border-green-400/30 shadow-green-500/10"
+                    : loading
+                    ? "text-amber-400 bg-amber-400/10 border-amber-400/40 shadow-amber-500/20"
+                    : "text-warmGrey-400 bg-charcoal-700/50 border-charcoal-600/50"}`}>
+                  {isComplete ? <CheckCircle2 className="w-3.5 h-3.5" /> : loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+                  {isComplete ? "Completed" : loading ? "Processing..." : "Waiting to Execute"}
+                </div>
+                <button
+                  onClick={() => setShowAgentAnalysis((v) => !v)}
+                  className="inline-flex items-center gap-1 rounded-md border border-charcoal-700 px-2 py-1 text-[10px] font-mono text-warmGrey-400 hover:text-bronze hover:border-bronze/50 transition-colors"
+                >
+                  {showAgentAnalysis ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  {showAgentAnalysis ? "Hide" : "Show"}
+                </button>
               </div>
             </div>
             {/* Card Body */}
-            <div className="px-5 py-4 min-h-[120px] overflow-y-auto custom-scrollbar">
-              {isComplete && agentMessages.length > 0 ? (
-                <div className="space-y-3">
-                  {agentMessages.map((msg, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="flex gap-3"
-                    >
-                      <div className="mt-1 w-2 h-2 rounded-full bg-bronze/60 shrink-0" />
-                      <div>
-                        <div className="text-[11px] font-bold text-bronze/80 mb-0.5">{msg.name || msg.agent}</div>
-                        <div className="text-xs text-warmGrey-400 leading-relaxed">{formatAgentMessage(msg)}</div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : loading ? (
-                <div className="flex items-center gap-2 text-xs text-warmGrey-600 font-mono">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-bronze/50" />
-                  <span>Agents processing...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 h-full">
-                  <ChevronRight className="w-4 h-4 text-charcoal-700" />
-                  <span className="text-xs text-charcoal-600 font-mono">Run the analysis to see agent-wise breakdown.</span>
-                </div>
-              )}
-            </div>
+            {showAgentAnalysis && (
+              <div className="px-5 py-4 min-h-[120px] overflow-y-auto custom-scrollbar">
+                {isComplete && agentMessages.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono text-warmGrey-500">
+                      Total agents reported: <span className="text-bronze">{agentMessages.length}</span>
+                    </div>
+                    {agentMessages.map((msg, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                        className="rounded-lg border border-charcoal-800/70 bg-charcoal-950/40 p-3"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bronze/20 px-1.5 text-[10px] font-bold text-bronze">
+                            {i + 1}
+                          </span>
+                          <div className="text-[11px] font-bold text-bronze/90">{msg.name || msg.agent}</div>
+                        </div>
+                        <div className="text-xs text-warmGrey-400 leading-relaxed whitespace-pre-wrap">
+                          {formatAgentMessage(msg)}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : loading ? (
+                  <div className="flex items-center gap-2 text-xs text-warmGrey-600 font-mono">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-bronze/50" />
+                    <span>Agents processing...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 h-full">
+                    <ChevronRight className="w-4 h-4 text-charcoal-700" />
+                    <span className="text-xs text-charcoal-600 font-mono">Run the analysis to see agent-wise breakdown.</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {!showAgentAnalysis && (
+              <div className="px-5 py-3 text-xs font-mono text-warmGrey-500">Agent-wise panel hidden.</div>
+            )}
           </div>
 
           {/* Final Report */}
@@ -507,67 +594,97 @@ export function InvestmentPage() {
                 {reportTimestamp && (
                   <span className="text-[10px] font-mono text-warmGrey-500">#{reportTimestamp}</span>
                 )}
+                {emailStatus && (
+                  <span className="text-[10px] font-mono text-warmGrey-500">
+                    {emailStatus === "sent"
+                      ? `• emailed to ${emailRecipient ?? "your inbox"}`
+                      : emailStatus === "failed"
+                      ? "• email failed"
+                      : emailStatus === "pending"
+                      ? "• email pending"
+                      : ""}
+                  </span>
+                )}
               </div>
-              <div className={`flex items-center gap-1.5 text-[10px] sm:text-xs font-mono px-3 py-1.5 rounded-full border transition-all duration-500 shadow-sm
-                ${isComplete
-                  ? "text-green-400 bg-green-400/10 border-green-400/30 shadow-green-500/10"
-                  : loading
-                  ? "text-amber-400 bg-amber-400/10 border-amber-400/40 shadow-amber-500/20"
-                  : "text-warmGrey-400 bg-charcoal-700/50 border-charcoal-600/50"}`}>
-                {isComplete ? <CheckCircle2 className="w-3.5 h-3.5" /> : loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
-                {isComplete ? "Completed" : loading ? "Generating Report..." : "Waiting to Execute"}
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-1.5 text-[10px] sm:text-xs font-mono px-3 py-1.5 rounded-full border transition-all duration-500 shadow-sm
+                  ${isComplete
+                    ? "text-green-400 bg-green-400/10 border-green-400/30 shadow-green-500/10"
+                    : loading
+                    ? "text-amber-400 bg-amber-400/10 border-amber-400/40 shadow-amber-500/20"
+                    : "text-warmGrey-400 bg-charcoal-700/50 border-charcoal-600/50"}`}>
+                  {isComplete ? <CheckCircle2 className="w-3.5 h-3.5" /> : loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+                  {isComplete ? "Completed" : loading ? "Generating Report..." : "Waiting to Execute"}
+                </div>
+                <button
+                  onClick={() => setShowFinalReport((v) => !v)}
+                  className="inline-flex items-center gap-1 rounded-md border border-charcoal-700 px-2 py-1 text-[10px] font-mono text-warmGrey-400 hover:text-bronze hover:border-bronze/50 transition-colors"
+                >
+                  {showFinalReport ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  {showFinalReport ? "Hide" : "Show"}
+                </button>
               </div>
             </div>
             {/* Card Body */}
-            <div className="px-5 py-4 min-h-[120px] overflow-y-auto custom-scrollbar">
-              {isComplete && response ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-xs text-warmGrey-300 leading-relaxed whitespace-pre-wrap font-sans"
-                >
-                  {response}
-                  {jobId && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <a
-                        href={getDownloadUrl(jobId, "report")}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-md border border-bronze/40 px-3 py-1.5 text-[11px] font-mono text-bronze hover:bg-bronze/10 transition-colors"
-                      >
-                        Download report
-                      </a>
-                      <a
-                        href={getDownloadUrl(jobId, "agent_analysis")}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-md border border-bronze/40 px-3 py-1.5 text-[11px] font-mono text-bronze hover:bg-bronze/10 transition-colors"
-                      >
-                        Download agent analysis
-                      </a>
-                      <a
-                        href={getDownloadUrl(jobId, "workflow_json")}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-md border border-bronze/40 px-3 py-1.5 text-[11px] font-mono text-bronze hover:bg-bronze/10 transition-colors"
-                      >
-                        Download workflow JSON
-                      </a>
-                    </div>
-                  )}
-                </motion.div>
-              ) : loading ? (
-                <div className="flex items-center gap-2 text-xs text-warmGrey-600 font-mono">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-bronze/50" />
-                  <span>Generating final report...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 h-full">
-                  <ChevronRight className="w-4 h-4 text-charcoal-700" />
-                  <span className="text-xs text-charcoal-600 font-mono">Final report will appear here after analysis.</span>
-                </div>
-              )}
-            </div>
+            {showFinalReport && (
+              <div className="px-5 py-4 min-h-[120px] overflow-y-auto custom-scrollbar">
+                {isComplete && response ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-warmGrey-300 leading-relaxed whitespace-pre-wrap font-sans"
+                  >
+                    {response}
+                    {emailStatus === "failed" && emailError && (
+                      <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11px] font-mono text-red-300">
+                        Email delivery failed: {emailError}
+                      </div>
+                    )}
+                    {jobId && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <a
+                          href={getDownloadUrl(jobId, "report")}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 rounded-md border border-bronze/40 px-3 py-1.5 text-[11px] font-mono text-bronze hover:bg-bronze/10 transition-colors"
+                        >
+                          Download report
+                        </a>
+                        <a
+                          href={getDownloadUrl(jobId, "agent_analysis")}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 rounded-md border border-bronze/40 px-3 py-1.5 text-[11px] font-mono text-bronze hover:bg-bronze/10 transition-colors"
+                        >
+                          Download agent analysis
+                        </a>
+                        <a
+                          href={getDownloadUrl(jobId, "workflow_json")}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 rounded-md border border-bronze/40 px-3 py-1.5 text-[11px] font-mono text-bronze hover:bg-bronze/10 transition-colors"
+                        >
+                          Download workflow JSON
+                        </a>
+                      </div>
+                    )}
+                  </motion.div>
+                ) : loading ? (
+                  <div className="flex items-center gap-2 text-xs text-warmGrey-600 font-mono">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-bronze/50" />
+                    <span>Generating final report...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 h-full">
+                    <ChevronRight className="w-4 h-4 text-charcoal-700" />
+                    <span className="text-xs text-charcoal-600 font-mono">Final report will appear here after analysis.</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {!showFinalReport && (
+              <div className="px-5 py-3 text-xs font-mono text-warmGrey-500">Final report panel hidden.</div>
+            )}
           </div>
 
           {/* Workflow JSON */}
@@ -581,23 +698,47 @@ export function InvestmentPage() {
                   Workflow JSON (timing/tokens)
                 </span>
               </div>
+              <button
+                onClick={() => setShowWorkflowPanel((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-md border border-charcoal-700 px-2 py-1 text-[10px] font-mono text-warmGrey-400 hover:text-bronze hover:border-bronze/50 transition-colors"
+              >
+                {showWorkflowPanel ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                {showWorkflowPanel ? "Hide" : "Show"}
+              </button>
             </div>
-            <div className="px-5 py-4 min-h-[160px] overflow-y-auto custom-scrollbar">
-              {isComplete && workflowJson ? (
-                <pre className="text-[11px] text-warmGrey-300 whitespace-pre-wrap break-words font-mono">
-                  {JSON.stringify(workflowJson, null, 2)}
-                </pre>
-              ) : (
-                <div className="flex items-center gap-3 h-full">
-                  <ChevronRight className="w-4 h-4 text-charcoal-700" />
-                  <span className="text-xs text-charcoal-600 font-mono">
-                    Workflow JSON with duration/token-like metrics will appear here.
-                  </span>
-                </div>
-              )}
-            </div>
+            {showWorkflowPanel && (
+              <div className="px-5 py-4 min-h-[160px] overflow-y-auto custom-scrollbar">
+                {isComplete && workflowJson ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] font-mono">
+                      <div className="rounded border border-charcoal-800/70 bg-charcoal-950/40 p-2">
+                        Duration: <span className="text-bronze">{String(workflowJson.duration_seconds ?? "-")}s</span>
+                      </div>
+                      <div className="rounded border border-charcoal-800/70 bg-charcoal-950/40 p-2">
+                        Prompt tokens: <span className="text-bronze">{String((workflowJson.usage_totals as Record<string, unknown> | undefined)?.prompt_eval_count ?? "-")}</span>
+                      </div>
+                      <div className="rounded border border-charcoal-800/70 bg-charcoal-950/40 p-2">
+                        Completion tokens: <span className="text-bronze">{String((workflowJson.usage_totals as Record<string, unknown> | undefined)?.eval_count ?? "-")}</span>
+                      </div>
+                    </div>
+                    <pre className="text-[11px] text-warmGrey-300 whitespace-pre-wrap break-words font-mono">
+                      {JSON.stringify(workflowJson, null, 2)}
+                    </pre>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 h-full">
+                    <ChevronRight className="w-4 h-4 text-charcoal-700" />
+                    <span className="text-xs text-charcoal-600 font-mono">
+                      Workflow JSON with duration/token-like metrics will appear here.
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            {!showWorkflowPanel && (
+              <div className="px-5 py-3 text-xs font-mono text-warmGrey-500">Workflow JSON panel hidden.</div>
+            )}
           </div>
-
         </div>
       </div>
 

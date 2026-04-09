@@ -42,6 +42,9 @@ export interface JobLogEvent {
     agent_analysis?: string;
     workflow_json?: string;
   };
+  email_status?: "pending" | "sent" | "failed" | "not_requested" | string;
+  email_recipient?: string;
+  email_error?: string;
   task_output?: AgentMessage | Record<string, unknown>;
   file_path?: string;
 }
@@ -60,6 +63,7 @@ const getErrorMessage = async (response: Response): Promise<string> => {
 export const executeAnalysis = async (payload: {
   user_data: string;
   user_query: string;
+  recipient_email?: string;
 }): Promise<ExecuteResponse> => {
   const response = await fetch(`${API_BASE_URL}/api/execute`, {
     method: "POST",
@@ -78,6 +82,13 @@ export const getDownloadUrl = (
   jobId: string,
   artifact: "report" | "agent_analysis" | "workflow_json" = "report",
 ): string => `${API_BASE_URL}/api/download/${jobId}?artifact=${artifact}`;
-export const getStreamUrl = (jobId: string): string => `${API_BASE_URL}/api/stream/${jobId}`;
+export const getStreamUrl = (jobId: string, lastEventId?: number): string => {
+  const params = new URLSearchParams();
+  if (typeof lastEventId === "number" && Number.isFinite(lastEventId) && lastEventId > 0) {
+    params.set("last_event_id", String(Math.floor(lastEventId)));
+  }
+  const query = params.toString();
+  return `${API_BASE_URL}/api/stream/${jobId}${query ? `?${query}` : ""}`;
+};
 
 export { API_BASE_URL };
