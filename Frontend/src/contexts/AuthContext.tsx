@@ -2,20 +2,24 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAnalytics } from 'firebase/analytics';
+import { getPerformance } from 'firebase/performance';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCSL36ldXdneZ_l3Zn9XrvSlIxBo_OW-DA",
-  authDomain: "finnai-bec75.firebaseapp.com",
-  projectId: "finnai-bec75",
-  storageBucket: "finnai-bec75.firebasestorage.app",
-  messagingSenderId: "687564120275",
-  appId: "1:687564120275:web:16c0c20f18ca8a5c89b426",
-  measurementId: "G-WQP8CPHK36",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
+export const perf = typeof window !== 'undefined' ? getPerformance(app) : null;
 const auth = getAuth(app);
 
 interface AuthContextType {

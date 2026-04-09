@@ -18,7 +18,8 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
-import { auth } from '../contexts/AuthContext';
+import { auth, analytics } from '../contexts/AuthContext';
+import { logEvent } from "firebase/analytics";
 
 const db = getFirestore();
 const googleProvider = new GoogleAuthProvider();
@@ -68,8 +69,10 @@ export function AuthPages({ onClose }: AuthProps) {
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
+        if (analytics) logEvent(analytics, 'login', { method: 'email' });
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
+        if (analytics) logEvent(analytics, 'sign_up', { method: 'email' });
       }
       onClose();
     } catch (err: any) {
@@ -83,6 +86,7 @@ export function AuthPages({ onClose }: AuthProps) {
     try {
       const authProvider = provider === 'google' ? googleProvider : githubProvider;
       await signInWithPopup(auth, authProvider);
+      if (analytics) logEvent(analytics, 'login', { method: provider });
       onClose();
     } catch (err: any) {
       setError(err.message || 'An error occurred during social login');
