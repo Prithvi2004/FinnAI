@@ -1,0 +1,52 @@
+## Fixed-Income Investment Plan
+
+**Client Profile:**
+
+*   Monthly Salary: ₹100,000
+*   Monthly Expenses: ₹25,000
+*   Investable Surplus: ₹75,000
+*   Emergency Fund: ₹150,000 (Achieved)
+*   Risk Tolerance: Medium
+
+**Financial Goals:**
+
+*   House: ₹5,000,000 in 5 years
+*   Retirement: ₹20,000,000 in 25 years
+*   Education: ₹1,000,000 in 3 years
+*   Travel: ₹500,000 in 1 year
+
+**Investment Objective:**
+
+To achieve the client's financial goals through a diversified portfolio of fixed-income instruments, focusing on capital preservation and generating predictable returns.
+
+**Recommended Fixed-Income Products (India):**
+
+1.  **Government Bonds (G-Secs):**
+    *   **Description:** Debt instruments issued by the Government of India. Considered very safe due to sovereign backing.
+    *   **Estimated Return:** 7.0% - 7.5% per annum
+    *   **Pros:** High safety, liquidity (for some bonds), and relatively stable returns.
+    *   **Cons:** Returns may be lower compared to corporate bonds.
+
+2.  **Corporate Bonds:**
+    *   **Description:** Debt instruments issued by companies to raise capital. Riskier than government bonds, but offer potentially higher returns.
+    *   **Estimated Return:** 8.0% - 9.5% per annum (depending on credit rating)
+    *   **Pros:** Higher returns compared to government bonds and fixed deposits.
+    *   **Cons:** Credit risk (risk of default by the issuer), lower liquidity compared to government bonds.
+
+3.  **Fixed Deposits (FDs):**
+    *   **Description:** Deposits held with banks for a fixed tenure at a fixed interest rate.
+    *   **Estimated Return:** 6.0% - 7.5% per annum (depending on the bank and tenure)
+    *   **Pros:** Simple, easy to understand, and relatively safe (especially with deposit insurance).
+    *   **Cons:** Returns may be lower than other fixed-income options, interest income is taxable.
+
+4.  **Debt Mutual Funds:**
+    *   **Description:** Mutual funds that invest primarily in fixed-income securities like government bonds, corporate bonds, and treasury bills.
+    *   **Estimated Return:** 7.0% - 8.5% per annum (depending on the fund type and market conditions)
+    *   **Pros:** Diversification, professional management, liquidity.
+    *   **Cons:** Market risk (NAV fluctuations), expense ratio, and taxation. Different types of debt funds have varying risk levels.
+
+**Recommended Allocation Strategy:**
+
+This allocation is designed for a medium risk tolerance, balancing safety and return potential. The allocation can be adjusted based on the client's specific preferences and market conditions.
+
+| Asset Class          | Allocation (%) | Rationale

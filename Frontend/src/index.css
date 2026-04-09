@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --charcoal-950: #0a0a0a;
+    --charcoal-900: #121110;
+    --charcoal-800: #1c1b1a;
+    --bronze: #b89a7a;
+    --warm-grey: #f2f0e9;
+  }
+
+  body {
+    @apply bg-charcoal-950 text-warmGrey-200 font-sans selection:bg-bronze/30 selection:text-warmGrey-100;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-normal tracking-tight;
+  }
+
+  textarea {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+}
+
+@layer components {
+  .glow {
+    @apply relative z-0;
+  }
+
+  .glow::after {
+    @apply content-[''] absolute -inset-3 bg-gradient-to-r from-bronze/10 to-charcoal-800/20 opacity-0 transition-opacity duration-700 rounded-[inherit] blur-2xl -z-10;
+  }
+
+  .glow:hover::after {
+    @apply opacity-100;
+  }
+
+  .nav-link {
+    @apply relative px-4 py-2 text-warmGrey-400 hover:text-warmGrey-100 transition-colors duration-500 font-medium tracking-wide text-sm;
+  }
+
+  .nav-link::after {
+    @apply content-[''] absolute left-4 right-4 bottom-0 h-[1px] bg-bronze scale-x-0 opacity-0 transform origin-left transition-all duration-500 ease-out;
+  }
+
+  .nav-link:hover::after {
+    @apply scale-x-100 opacity-100;
+  }
+
+  .feature-card {
+    @apply relative bg-charcoal-900/40 backdrop-blur-md p-8 rounded-2xl border border-charcoal-800/50 transition-all duration-700 hover:-translate-y-1 hover:border-bronze/30 hover:shadow-2xl hover:shadow-charcoal-950/50 overflow-hidden;
+  }
+  
+  .feature-card::before {
+    @apply content-[''] absolute inset-0 bg-gradient-to-br from-warmGrey-100/5 to-transparent opacity-0 transition-opacity duration-700 pointer-events-none;
+  }
+  
+  .feature-card:hover::before {
+    @apply opacity-100;
+  }
+
+  .feature-icon {
+    @apply w-10 h-10 text-bronze mb-6 opacity-80;
+  }
+}
+
+.grain-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.25;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+.mesh-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(28, 27, 26, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(18, 17, 16, 0.6) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(184, 154, 122, 0.05) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(10, 10, 10, 1) 0px, transparent 50%);
+  background-color: var(--charcoal-950);
+}
+
+/* Chat animations updated for elegance */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes flow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-flow {
+  animation: flow 6s linear infinite;
+}
+
+/* Agent bubble animation using bronze */
+@keyframes pulseBronze {
+  0% { box-shadow: 0 0 0 0 rgba(184, 154, 122, 0.2); }
+  70% { box-shadow: 0 0 0 10px rgba(184, 154, 122, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(184, 154, 122, 0); }
+}
+
+.agent-bubble {
+  animation: pulseBronze 3s infinite;
+}
+
+/* Typing indicator */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+}
+
+.typing-indicator span {
+  height: 6px;
+  width: 6px;
+  margin: 0 2px;
+  background-color: var(--bronze);
+  border-radius: 50%;
+  display: inline-block;
+  opacity: 0.3;
+}
+
+.typing-indicator span:nth-child(1) { animation: bounce 1.2s infinite 0.1s; }
+.typing-indicator span:nth-child(2) { animation: bounce 1.2s infinite 0.3s; }
+.typing-indicator span:nth-child(3) { animation: bounce 1.2s infinite 0.5s; }
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.3; }
+  50% { transform: translateY(-3px); opacity: 1; }
+}
